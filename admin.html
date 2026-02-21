@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - شحن الرصيد</title>
+    <!-- Bootstrap RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #2C3E50;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .header-admin {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .order-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-right: 5px solid #FF6B6B;
+            transition: transform 0.3s;
+        }
+        .order-card:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .invoice-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            margin: 2px;
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            margin: 2px;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .password-input {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+        }
+        .back-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4ECDC4;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            text-decoration: none;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- صفحة تسجيل الدخول -->
+<div class="login-container" id="loginPage">
+    <div class="text-center mb-4">
+        <i class="fas fa-lock fa-3x text-primary"></i>
+        <h3 class="mt-3">لوحة التحكم</h3>
+        <p class="text-muted">الرجاء إدخال كلمة المرور</p>
+    </div>
+    
+    <div class="password-input mb-3">
+        <input type="password" class="form-control" id="passwordInput" placeholder="كلمة المرور">
+        <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
+    </div>
+    
+    <button class="btn btn-primary w-100" onclick="checkPassword()">
+        <i class="fas fa-sign-in-alt"></i> دخول
+    </button>
+    
+    <div class="text-center mt-3">
+        <a href="index.html" class="text-decoration-none">
+            <i class="fas fa-arrow-right"></i> العودة للصفحة الرئيسية
+        </a>
+    </div>
+</div>
+
+<!-- لوحة التحكم (تظهر بعد تسجيل الدخول) -->
+<div class="admin-container" id="adminPanel">
+    <div class="header-admin">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-cog"></i> لوحة التحكم - إدارة الطلبات</h2>
+            <button class="btn btn-light" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+            </button>
+        </div>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h5>إجمالي الطلبات</h5>
+                <h2 id="totalOrders">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);">
+                <h5>إجمالي المبيعات</h5>
+                <h2 id="totalSales">0 TL</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4ECDC4 0%, #2C7A7B 100%);">
+                <h5>طلبات اليوم</h5>
+                <h2 id="todayOrders">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #F9D56E 0%, #F8B400 100%);">
+                <h5>متوسط الطلب</h5>
+                <h2 id="averageOrder">0 TL</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- أزرار التحكم والبحث -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <button class="btn btn-danger" onclick="clearAllOrders()">
+                <i class="fas fa-trash"></i> حذف جميع الطلبات
+            </button>
+            <button class="btn btn-success" onclick="exportAllPDF()">
+                <i class="fas fa-file-pdf"></i> تصدير جميع الفواتير
+            </button>
+        </div>
+        <div class="col-md-6">
+            <input type="text" class="form-control search-box" id="searchInput" placeholder="🔍 بحث برقم تركي أو سوري..." onkeyup="searchOrders()">
+        </div>
+    </div>
+
+    <!-- قائمة الطلبات -->
+    <div id="ordersList" class="mt-4"></div>
+</div>
+
+<!-- رابط العودة للصفحة الرئيسية -->
+<a href="index.html" class="back-link">
+    <i class="fas fa-home"></i> الصفحة الرئيسية
+</a>
+
+<script>
+    // كلمة المرور (يمكنك تغييرها)
+    const ADMIN_PASSWORD = "admin123";
+    
+    // التحقق من تسجيل الدخول عند تحميل الصفحة
+    window.onload = function() {
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadOrders();
+        }
+    }
+
+    // إظهار/إخفاء كلمة المرور
+    window.togglePassword = function() {
+        const passwordInput = document.getElementById('passwordInput');
+        const icon = document.querySelector('.toggle-password');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // التحقق من كلمة المرور
+    window.checkPassword = function() {
+        const password = document.getElementById('passwordInput').value;
+        
+        if (password === ADMIN_PASSWORD) {
+            sessionStorage.setItem('adminLoggedIn', 'true');
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadOrders();
+        } else {
+            alert('❌ كلمة المرور غير صحيحة');
+        }
+    }
+
+    // تسجيل الخروج
+    window.logout = function() {
+        sessionStorage.removeItem('adminLoggedIn');
+        document.getElementById('loginPage').style.display = 'block';
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('passwordInput').value = '';
+    }
+
+    // تحميل الطلبات وعرضها
+    function loadOrders() {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        displayOrders(orders);
+        updateStats(orders);
+    }
+
+    // عرض الطلبات
+    function displayOrders(orders) {
+        const ordersList = document.getElementById('ordersList');
+        
+        if (orders.length === 0) {
+            ordersList.innerHTML = '<div class="text-center p-5"><i class="fas fa-inbox fa-3x text-muted mb-3"></i><h5>لا توجد طلبات حالياً</h5></div>';
+            return;
+        }
+
+        ordersList.innerHTML = orders.map((order, index) => {
+            const [syAmount, tlAmount] = order.package.split('-');
+            return `
+                <div class="order-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-2">
+                            <small class="text-muted">#${index + 1}</small>
+                            <div>${order.date}</div>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>🇹🇷 تركي:</strong> ${order.turkeyNumber}
+                        </div>
+                        <div class="col-md-2">
+                            <strong>🇸🇾 سوري:</strong> ${order.syriaNumber}
+                        </div>
+                        <div class="col-md-1">
+                            <strong>الباقة:</strong> ${syAmount} ل.س
+                        </div>
+                        <div class="col-md-1">
+                            <span class="badge bg-success">${tlAmount} TL</span>
+                        </div>
+                        <div class="col-md-2">
+                            ${order.notes ? `<small class="text-muted">📝 ${order.notes}</small>` : ''}
+                        </div>
+                        <div class="col-md-2">
+                            <button class="invoice-btn" onclick="generatePDF(${index})">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                            <button class="delete-btn" onclick="deleteOrder(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // تحديث الإحصائيات
+    function updateStats(orders) {
+        document.getElementById('totalOrders').textContent = orders.length;
+        
+        // إجمالي المبيعات
+        const totalTL = orders.reduce((sum, order) => {
+            const tlAmount = parseInt(order.package.split('-')[1]);
+            return sum + (isNaN(tlAmount) ? 0 : tlAmount);
+        }, 0);
+        document.getElementById('totalSales').textContent = totalTL + ' TL';
+        
+        // طلبات اليوم
+        const today = new Date().toLocaleDateString('ar-SA');
+        const todayOrders = orders.filter(order => {
+            return order.date.includes(today);
+        }).length;
+        document.getElementById('todayOrders').textContent = todayOrders;
+        
+        // متوسط الطلب
+        const avg = orders.length > 0 ? Math.round(totalTL / orders.length) : 0;
+        document.getElementById('averageOrder').textContent = avg + ' TL';
+    }
+
+    // البحث في الطلبات
+    window.searchOrders = function() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        
+        const filteredOrders = orders.filter(order => 
+            order.turkeyNumber.includes(searchTerm) || 
+            order.syriaNumber.includes(searchTerm) ||
+            (order.notes && order.notes.toLowerCase().includes(searchTerm))
+        );
+        
+        displayOrders(filteredOrders);
+    }
+
+    // حذف طلب
+    window.deleteOrder = function(index) {
+        if (confirm('هل أنت متأكد من حذف هذا الطلب؟')) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.splice(index, 1);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            loadOrders();
+        }
+    }
+
+    // حذف جميع الطلبات
+    window.clearAllOrders = function() {
+        if (confirm('⚠️ هل أنت متأكد من حذف جميع الطلبات؟')) {
+            localStorage.removeItem('orders');
+            loadOrders();
+        }
+    }
+
+    // إنشاء PDF لطلب واحد
+    window.generatePDF = function(index) {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        const order = orders[index];
+        const [syAmount, tlAmount] = order.package.split('-');
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFont('cairo');
+        doc.setFontSize(22);
+        doc.setTextColor(255, 107, 107);
+        doc.text('فاتورة شحن رصيد', 105, 20, { align: 'center' });
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.text(`التاريخ: ${order.date}`, 20, 40);
+        doc.text(`رقم الفاتورة: INV-${order.id || (index + 1)}`, 20, 50);
+        
+        doc.setFontSize(14);
+        doc.text('معلومات الطلب:', 20, 70);
+        
+        doc.setFontSize(12);
+        doc.text(`🇹🇷 الرقم التركي: ${order.turkeyNumber}`, 30, 85);
+        doc.text(`🇸🇾 الرقم السوري: ${order.syriaNumber}`, 30, 95);
+        doc.text(`💰 الباقة: ${syAmount} ل.س`, 30, 105);
+        doc.text(`💵 السعر: ${tlAmount} TL`, 30, 115);
+        
+        if (order.notes) {
+            doc.text(`📝 ملاحظات: ${order.notes}`, 30, 125);
+        }
+        
+        doc.setTextColor(78, 205, 196);
+        doc.text('شادي الرز', 105, 150, { align: 'center' });
+        doc.text('واتس اب: 905375090593', 105, 160, { align: 'center' });
+        doc.setTextColor(100, 100, 100);
+        doc.text('re_2PsZgsgd_MrtR13QM1hRL5cHUwekQUfCU', 105, 180, { align: 'center' });
+        
+        doc.save(`فاتورة_${order.turkeyNumber}.pdf`);
+    }
+
+    // تصدير جميع الفواتير (مجموعة في ملف واحد)
+    window.exportAllPDF = function() {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        
+        if (orders.length === 0) {
+            alert('لا توجد طلبات للتصدير');
+            return;
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFont('cairo');
+        doc.setFontSize(22);
+        doc.setTextColor(255, 107, 107);
+        doc.text('تقرير جميع الطلبات', 105, 20, { align: 'center' });
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        
+        let y = 40;
+        orders.forEach((order, i) => {
+            const [syAmount, tlAmount] = order.package.split('-');
+            
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+            
+            doc.text(`الطلب #${i + 1}`, 20, y);
+            doc.text(`التاريخ: ${order.date}`, 20, y + 7);
+            doc.text(`🇹🇷 تركي: ${order.turkeyNumber}`, 20, y + 14);
+            doc.text(`🇸🇾 سوري: ${order.syriaNumber}`, 20, y + 21);
+            doc.text(`الباقة: ${syAmount} ل.س - ${tlAmount} TL`, 20, y + 28);
+            
+            y += 40;
+        });
+        
+        doc.save('جميع_الطلبات.pdf');
+    }
+
+    // التحقق من وجود طلبات جديدة كل 30 ثانية
+    setInterval(loadOrders, 30000);
+</script>
+
+</body>
+</html>
