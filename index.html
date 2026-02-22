@@ -3,285 +3,1332 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شحن الرصيد السوري من تركيا</title>
+    <title>لوحة التحكم - شحن الرصيد</title>
     <!-- Bootstrap RTL -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Cairo', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f0f2f5;
             min-height: 100vh;
+        }
+
+        /* شاشة الدخول */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
         }
-        .main-card {
+
+        .login-card {
             background: white;
             border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            margin-bottom: 30px;
-            max-width: 800px;
-            margin: 0 auto;
+            animation: slideUp 0.5s ease;
         }
-        .header-gradient {
-            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
-            color: white;
-            padding: 30px;
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
             text-align: center;
+            margin-bottom: 30px;
         }
-        .header-gradient h1 {
+
+        .login-header i {
+            font-size: 50px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .login-header h2 {
+            color: #333;
             font-weight: 700;
-            font-size: 2rem;
-            margin-bottom: 10px;
         }
-        .price-list {
-            background: #f8f9fa;
+
+        .password-input {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .password-input input {
+            width: 100%;
+            padding: 15px;
+            padding-left: 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .password-input input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .toggle-password {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        /* لوحة التحكم */
+        .admin-panel {
+            display: none;
             padding: 20px;
-            border-radius: 15px;
-            margin: 20px;
-            border: 2px solid #4ECDC4;
         }
-        .price-item {
+
+        .admin-header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
-            padding: 8px 15px;
-            margin: 5px 0;
-            background: white;
-            border-radius: 10px;
-            transition: transform 0.3s;
-            border-right: 4px solid #FF6B6B;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .price-item:hover {
-            transform: translateX(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+
+        .admin-header h2 {
+            color: #333;
+            font-weight: 700;
+            margin: 0;
         }
-        .whatsapp-btn {
-            background: #25D366;
+
+        .admin-header h2 i {
+            color: #667eea;
+            margin-left: 10px;
+        }
+
+        .logout-btn {
+            background: #ff6b6b;
             color: white;
-            padding: 15px 30px;
-            border-radius: 50px;
-            text-decoration: none;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        /* بطاقات الإحصائيات */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, #667eea20, #764ba220);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon i {
+            font-size: 24px;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* أزرار التحكم */
+        .controls-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: none;
-            font-size: 1.2rem;
-            margin: 20px 0;
+            gap: 8px;
         }
-        .whatsapp-btn:hover {
-            background: #128C7E;
+
+        .control-btn.primary {
+            background: #667eea;
             color: white;
-            transform: scale(1.05);
         }
-        .form-section {
-            padding: 30px;
+
+        .control-btn.primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
         }
-        .form-control, .form-select {
-            border-radius: 10px;
+
+        .control-btn.success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .control-btn.success:hover {
+            background: #43a047;
+            transform: translateY(-2px);
+        }
+
+        .control-btn.danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .control-btn.danger:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        .control-btn.warning {
+            background: #ffa726;
+            color: white;
+        }
+
+        .control-btn.warning:hover {
+            background: #ff9800;
+            transform: translateY(-2px);
+        }
+
+        .control-btn.info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .control-btn.info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        /* مربع البحث */
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 15px;
+            padding-right: 45px;
             border: 2px solid #e0e0e0;
-            padding: 12px;
-            font-family: 'Cairo', sans-serif;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
         }
-        .form-control:focus, .form-select:focus {
-            border-color: #4ECDC4;
-            box-shadow: 0 0 0 0.2rem rgba(78, 205, 196, 0.25);
+
+        .search-box input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        .submit-btn {
-            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        /* الرسوم البيانية */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h4 {
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .chart-card h4 i {
+            color: #667eea;
+            margin-left: 8px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* قائمة الطلبات */
+        .orders-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .orders-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .orders-header h4 {
+            color: #333;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .orders-header h4 i {
+            color: #667eea;
+            margin-left: 8px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
             border: none;
+            border-radius: 20px;
+            background: #f0f2f5;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .filter-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
             padding: 15px;
             font-weight: 600;
-            font-size: 1.2rem;
-            border-radius: 10px;
-            width: 100%;
-            color: white;
-            transition: transform 0.3s;
+            text-align: center;
         }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
         }
-        .badge-price {
-            background: #4ECDC4;
-            color: white;
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
             padding: 5px 10px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 12px;
+            font-weight: 600;
         }
-        .admin-link {
+
+        .badge.success {
+            background: #4caf5050;
+            color: #4caf50;
+        }
+
+        .badge.warning {
+            background: #ffa72650;
+            color: #ffa726;
+        }
+
+        .badge.info {
+            background: #17a2b850;
+            color: #17a2b8;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 2px;
+            transition: all 0.3s;
+        }
+
+        .action-btn.pdf {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .action-btn.pdf:hover {
+            background: #ff5252;
+        }
+
+        .action-btn.delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .action-btn.delete:hover {
+            background: #c82333;
+        }
+
+        .action-btn.whatsapp {
+            background: #25D366;
+            color: white;
+        }
+
+        .action-btn.whatsapp:hover {
+            background: #128C7E;
+        }
+
+        .action-btn.email {
+            background: #667eea;
+            color: white;
+        }
+
+        .action-btn.email:hover {
+            background: #5a67d8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        /* نافذة منبثقة */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            font-weight: 700;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .order-details {
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            width: 120px;
+            color: #666;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .email-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border-right: 4px solid #667eea;
+        }
+
+        .email-preview h5 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .email-preview p {
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .footer-link {
             position: fixed;
             bottom: 20px;
-            left: 20px;
-            background: #2C3E50;
-            color: white;
+            right: 20px;
+            background: white;
+            color: #667eea;
             padding: 10px 20px;
             border-radius: 50px;
             text-decoration: none;
-            font-size: 0.9rem;
-            opacity: 0.7;
-            transition: opacity 0.3s;
+            font-weight: 600;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            z-index: 100;
         }
-        .admin-link:hover {
-            opacity: 1;
-            color: white;
+
+        .footer-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: #5a67d8;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+            }
+            
+            .control-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="main-card">
-        <div class="header-gradient">
-            <h1><i class="fas fa-bolt"></i> شحن الرصيد السوري</h1>
-            <p class="mb-0">⚡ من تركيا إلى سوريا – بسرعة وأمان</p>
+<!-- شاشة تسجيل الدخول -->
+<div class="login-container" id="loginPage">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-lock"></i>
+            <h2>لوحة التحكم</h2>
+            <p class="text-muted">الرجاء إدخال كلمة المرور للدخول</p>
         </div>
-
-        <!-- قائمة الأسعار -->
-        <div class="price-list">
-            <h4 class="mb-4"><i class="fas fa-tags text-primary"></i> أسعار الرصيد السوري</h4>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="price-item"><span>🇸🇾 1000 ل.س</span> <span class="badge-price">🇹🇷 10 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 1500 ل.س</span> <span class="badge-price">🇹🇷 15 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 2000 ل.س</span> <span class="badge-price">🇹🇷 20 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 3000 ل.س</span> <span class="badge-price">🇹🇷 30 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 4000 ل.س</span> <span class="badge-price">🇹🇷 35 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 5000 ل.س</span> <span class="badge-price">🇹🇷 50 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 10,000 ل.س</span> <span class="badge-price">🇹🇷 65 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 20,000 ل.س</span> <span class="badge-price">🇹🇷 120 TL</span></div>
-                </div>
-                <div class="col-md-6">
-                    <div class="price-item"><span>🇸🇾 30,000 ل.س</span> <span class="badge-price">🇹🇷 180 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 50,000 ل.س</span> <span class="badge-price">🇹🇷 260 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 100,000 ل.س</span> <span class="badge-price">🇹🇷 500 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 200,000 ل.س</span> <span class="badge-price">🇹🇷 975 TL</span></div>
-                    <div class="price-item"><span>🇸🇾 250,000 ل.س</span> <span class="badge-price">🇹🇷 1200 TL</span></div>
-                </div>
-            </div>
+        
+        <div class="password-input">
+            <input type="password" id="passwordInput" placeholder="كلمة المرور" onkeypress="handleKeyPress(event)">
+            <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
         </div>
-
-        <!-- رابط واتس اب -->
-        <div class="text-center">
-            <a href="https://wa.me/905375090593" class="whatsapp-btn" target="_blank">
-                <i class="fab fa-whatsapp fa-2x"></i>
-                تواصل معنا عبر واتس اب
+        
+        <button class="login-btn" onclick="checkPassword()">
+            <i class="fas fa-sign-in-alt"></i> دخول
+        </button>
+        
+        <div class="text-center mt-3">
+            <a href="index.html" style="color: #667eea; text-decoration: none;">
+                <i class="fas fa-arrow-right"></i> العودة للصفحة الرئيسية
             </a>
-            <p class="text-muted">📌 شادي الرز</p>
+        </div>
+    </div>
+</div>
+
+<!-- لوحة التحكم -->
+<div class="admin-panel" id="adminPanel">
+    <div class="admin-header">
+        <h2><i class="fas fa-cog"></i> لوحة التحكم - إدارة الطلبات</h2>
+        <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+        </button>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- أزرار التحكم -->
+    <div class="controls-section">
+        <div class="control-buttons">
+            <button class="control-btn primary" onclick="refreshOrders()">
+                <i class="fas fa-sync-alt"></i> تحديث
+            </button>
+            <button class="control-btn success" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> تصدير Excel
+            </button>
+            <button class="control-btn warning" onclick="exportAllPDF()">
+                <i class="fas fa-file-pdf"></i> تصدير جميع PDF
+            </button>
+            <button class="control-btn info" onclick="sendEmailReport()">
+                <i class="fas fa-envelope"></i> إرسال تقرير Gmail
+            </button>
+            <button class="control-btn danger" onclick="clearAllOrders()">
+                <i class="fas fa-trash"></i> حذف الكل
+            </button>
         </div>
 
-        <!-- نموذج الطلب -->
-        <div class="form-section">
-            <form id="orderForm">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">🇹🇷 الرقم التركي (الخاص بك)</label>
-                        <input type="text" class="form-control" id="turkeyNumber" placeholder="مثال: 905375090593" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">🇸🇾 الرقم السوري المراد الشحن له</label>
-                        <input type="text" class="form-control" id="syriaNumber" placeholder="مثال: 9639XXXXXXXX" required>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">اختر الباقة</label>
-                        <select class="form-select" id="packageSelect" required>
-                            <option value="">-- اختر الباقة --</option>
-                            <option value="1000-10">1000 ل.س - 10 TL</option>
-                            <option value="1500-15">1500 ل.س - 15 TL</option>
-                            <option value="2000-20">2000 ل.س - 20 TL</option>
-                            <option value="3000-30">3000 ل.س - 30 TL</option>
-                            <option value="4000-35">4000 ل.س - 35 TL</option>
-                            <option value="5000-50">5000 ل.س - 50 TL</option>
-                            <option value="10000-65">10,000 ل.س - 65 TL</option>
-                            <option value="20000-120">20,000 ل.س - 120 TL</option>
-                            <option value="30000-180">30,000 ل.س - 180 TL</option>
-                            <option value="50000-260">50,000 ل.س - 260 TL</option>
-                            <option value="100000-500">100,000 ل.س - 500 TL</option>
-                            <option value="200000-975">200,000 ل.س - 975 TL</option>
-                            <option value="250000-1200">250,000 ل.س - 1200 TL</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">ملاحظات (اختياري)</label>
-                        <input type="text" class="form-control" id="notes" placeholder="أي ملاحظات إضافية">
-                    </div>
-                </div>
-
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-paper-plane"></i> إرسال الطلب
-                </button>
-            </form>
+        <!-- مربع البحث -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 بحث برقم تركي أو سوري..." onkeyup="searchOrders()">
+            <i class="fas fa-search"></i>
         </div>
     </div>
 
-    <!-- رابط لوحة التحكم (يظهر في أسفل الصفحة) -->
-    <a href="admin.html" class="admin-link">
-        <i class="fas fa-lock"></i> لوحة التحكم
-    </a>
+    <!-- الرسوم البيانية -->
+    <div class="charts-section">
+        <div class="chart-card">
+            <h4><i class="fas fa-chart-pie"></i> توزيع الباقات</h4>
+            <div class="chart-container">
+                <canvas id="packagesChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fas fa-chart-line"></i> الطلبات اليومية</h4>
+            <div class="chart-container">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- قائمة الطلبات -->
+    <div class="orders-section">
+        <div class="orders-header">
+            <h4><i class="fas fa-list"></i> جميع الطلبات</h4>
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterOrders('all')">الكل</button>
+                <button class="filter-tab" onclick="filterOrders('today')">اليوم</button>
+                <button class="filter-tab" onclick="filterOrders('week')">هذا الأسبوع</button>
+                <button class="filter-tab" onclick="filterOrders('month')">هذا الشهر</button>
+            </div>
+        </div>
+
+        <div class="table-responsive" id="ordersTable"></div>
+    </div>
+</div>
+
+<!-- رابط الصفحة الرئيسية -->
+<a href="index.html" class="footer-link">
+    <i class="fas fa-home"></i> العودة للصفحة الرئيسية
+</a>
+
+<!-- نافذة تفاصيل الطلب -->
+<div class="modal" id="orderModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-invoice"></i> تفاصيل الطلب</h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+        <div id="modalContent"></div>
+    </div>
 </div>
 
 <script>
-    // تخزين الطلبات
-    let orders = JSON.parse(localStorage.getItem('orders')) || [];
+    // كلمة المرور
+    const ADMIN_PASSWORD = "admin123";
+    
+    // متغيرات للرسوم البيانية
+    let packagesChart = null;
+    let dailyChart = null;
+    
+    // التحقق من تسجيل الدخول
+    window.onload = function() {
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            showAdminPanel();
+        }
+    }
 
-    // إضافة طلب جديد
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    // إظهار/إخفاء كلمة المرور
+    window.togglePassword = function() {
+        const passwordInput = document.getElementById('passwordInput');
+        const icon = document.querySelector('.toggle-password');
         
-        const turkeyNumber = document.getElementById('turkeyNumber').value;
-        const syriaNumber = document.getElementById('syriaNumber').value;
-        const packageSelect = document.getElementById('packageSelect').value;
-        const notes = document.getElementById('notes').value;
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
 
-        if (!turkeyNumber || !syriaNumber || !packageSelect) {
-            alert('الرجاء تعبئة جميع الحقول المطلوبة');
+    // الضغط على Enter
+    window.handleKeyPress = function(e) {
+        if (e.key === 'Enter') {
+            checkPassword();
+        }
+    }
+
+    // التحقق من كلمة المرور
+    window.checkPassword = function() {
+        const password = document.getElementById('passwordInput').value;
+        
+        if (password === ADMIN_PASSWORD) {
+            sessionStorage.setItem('adminLoggedIn', 'true');
+            showAdminPanel();
+        } else {
+            alert('❌ كلمة المرور غير صحيحة');
+        }
+    }
+
+    // إظهار لوحة التحكم
+    function showAdminPanel() {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadOrders();
+    }
+
+    // تسجيل الخروج
+    window.logout = function() {
+        sessionStorage.removeItem('adminLoggedIn');
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('passwordInput').value = '';
+    }
+
+    // تحميل الطلبات
+    function loadOrders(filter = 'all') {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        displayOrders(orders, filter);
+        updateStats(orders);
+        updateCharts(orders);
+    }
+
+    // تحديث الإحصائيات
+    function updateStats(orders) {
+        const totalOrders = orders.length;
+        
+        // إجمالي المبيعات
+        const totalTL = orders.reduce((sum, order) => {
+            const tlAmount = parseInt(order.package.split('-')[1]);
+            return sum + (isNaN(tlAmount) ? 0 : tlAmount);
+        }, 0);
+        
+        // طلبات اليوم
+        const today = new Date().toLocaleDateString('ar-SA');
+        const todayOrders = orders.filter(order => order.date.includes(today)).length;
+        
+        // متوسط الطلب
+        const avgOrder = orders.length > 0 ? Math.round(totalTL / orders.length) : 0;
+        
+        // أعلى طلب
+        const maxOrder = orders.reduce((max, order) => {
+            const tlAmount = parseInt(order.package.split('-')[1]);
+            return Math.max(max, isNaN(tlAmount) ? 0 : tlAmount);
+        }, 0);
+
+        const statsGrid = document.getElementById('statsGrid');
+        statsGrid.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                <div class="stat-label">إجمالي الطلبات</div>
+                <div class="stat-value">${totalOrders}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-lira-sign"></i></div>
+                <div class="stat-label">إجمالي المبيعات</div>
+                <div class="stat-value">${totalTL} TL</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+                <div class="stat-label">طلبات اليوم</div>
+                <div class="stat-value">${todayOrders}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-label">متوسط الطلب</div>
+                <div class="stat-value">${avgOrder} TL</div>
+            </div>
+        `;
+    }
+
+    // تحديث الرسوم البيانية
+    function updateCharts(orders) {
+        // رسم بياني للباقات
+        const packages = {};
+        orders.forEach(order => {
+            const [syAmount] = order.package.split('-');
+            packages[syAmount] = (packages[syAmount] || 0) + 1;
+        });
+
+        if (packagesChart) {
+            packagesChart.destroy();
+        }
+
+        const packagesCtx = document.getElementById('packagesChart').getContext('2d');
+        packagesChart = new Chart(packagesCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(packages),
+                datasets: [{
+                    data: Object.values(packages),
+                    backgroundColor: ['#667eea', '#764ba2', '#ff6b6b', '#4ecdc4', '#ffa726']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // رسم بياني للطلبات اليومية
+        const last7Days = [];
+        const dailyCounts = [];
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toLocaleDateString('ar-SA');
+            last7Days.push(dateStr);
+            
+            const count = orders.filter(order => order.date.includes(dateStr)).length;
+            dailyCounts.push(count);
+        }
+
+        if (dailyChart) {
+            dailyChart.destroy();
+        }
+
+        const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+        dailyChart = new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: last7Days,
+                datasets: [{
+                    label: 'عدد الطلبات',
+                    data: dailyCounts,
+                    borderColor: '#667eea',
+                    backgroundColor: '#667eea20',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    // عرض الطلبات
+    function displayOrders(orders, filter = 'all') {
+        let filteredOrders = orders;
+        
+        if (filter === 'today') {
+            const today = new Date().toLocaleDateString('ar-SA');
+            filteredOrders = orders.filter(order => order.date.includes(today));
+        } else if (filter === 'week') {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            filteredOrders = orders.filter(order => {
+                const orderDate = new Date(order.date);
+                return orderDate >= weekAgo;
+            });
+        } else if (filter === 'month') {
+            const monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            filteredOrders = orders.filter(order => {
+                const orderDate = new Date(order.date);
+                return orderDate >= monthAgo;
+            });
+        }
+
+        const ordersTable = document.getElementById('ordersTable');
+        
+        if (filteredOrders.length === 0) {
+            ordersTable.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h5>لا توجد طلبات</h5>
+                    <p class="text-muted">لم يتم تقديم أي طلبات بعد</p>
+                </div>
+            `;
             return;
         }
 
-        const order = {
-            id: Date.now(),
-            turkeyNumber,
-            syriaNumber,
-            package: packageSelect,
-            notes,
-            date: new Date().toLocaleString('ar-SA')
-        };
+        let tableHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>الرقم التركي</th>
+                        <th>الرقم السوري</th>
+                        <th>الباقة</th>
+                        <th>السعر</th>
+                        <th>ملاحظات</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
-        orders.push(order);
-        localStorage.setItem('orders', JSON.stringify(orders));
-        
-        // إرسال إشعار إلى Gmail
-        sendEmailNotification(order);
-        
-        // تفريغ الحقول
-        this.reset();
-        
-        alert('✅ تم إرسال الطلب بنجاح');
-    });
+        filteredOrders.forEach((order, index) => {
+            const [syAmount, tlAmount] = order.package.split('-');
+            tableHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${order.date}</td>
+                    <td>${order.turkeyNumber}</td>
+                    <td>${order.syriaNumber}</td>
+                    <td>${syAmount} ل.س</td>
+                    <td><span class="badge success">${tlAmount} TL</span></td>
+                    <td>${order.notes || '-'}</td>
+                    <td>
+                        <button class="action-btn pdf" onclick="generatePDF('${order.id}')" title="تحميل PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+                        <button class="action-btn whatsapp" onclick="sendWhatsApp('${order.turkeyNumber}')" title="واتس اب">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button class="action-btn email" onclick="sendOrderEmail(${index})" title="إرسال إيميل">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteOrder('${order.id}')" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
 
-    // إرسال إشعار إلى Gmail
-    function sendEmailNotification(order) {
+        tableHTML += '</tbody></table>';
+        ordersTable.innerHTML = tableHTML;
+    }
+
+    // تصفية الطلبات
+    window.filterOrders = function(filter) {
+        const tabs = document.querySelectorAll('.filter-tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        displayOrders(orders, filter);
+    }
+
+    // تحديث الطلبات
+    window.refreshOrders = function() {
+        loadOrders();
+    }
+
+    // البحث في الطلبات
+    window.searchOrders = function() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        
+        const filteredOrders = orders.filter(order => 
+            order.turkeyNumber.includes(searchTerm) || 
+            order.syriaNumber.includes(searchTerm) ||
+            (order.notes && order.notes.toLowerCase().includes(searchTerm))
+        );
+        
+        displayOrders(filteredOrders);
+    }
+
+    // حذف طلب
+    window.deleteOrder = function(orderId) {
+        if (confirm('هل أنت متأكد من حذف هذا الطلب؟')) {
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders = orders.filter(order => order.id != orderId);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            loadOrders();
+            
+            // إرسال إشعار بالحذف
+            sendEmailNotification('delete', orderId);
+        }
+    }
+
+    // حذف جميع الطلبات
+    window.clearAllOrders = function() {
+        if (confirm('⚠️ هل أنت متأكد من حذف جميع الطلبات؟')) {
+            localStorage.removeItem('orders');
+            loadOrders();
+            
+            // إرسال إشعار بالحذف الكلي
+            sendEmailNotification('clear_all');
+        }
+    }
+
+    // إنشاء PDF لطلب واحد
+    window.generatePDF = function(orderId) {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        const order = orders.find(o => o.id == orderId);
+        
+        if (!order) return;
+        
         const [syAmount, tlAmount] = order.package.split('-');
-        const subject = encodeURIComponent('طلب شحن رصيد سوري جديد');
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFont('cairo');
+        doc.setFontSize(22);
+        doc.setTextColor(102, 126, 234);
+        doc.text('فاتورة شحن رصيد', 105, 20, { align: 'center' });
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.text(`التاريخ: ${order.date}`, 20, 40);
+        doc.text(`رقم الفاتورة: INV-${order.id}`, 20, 50);
+        
+        doc.setFontSize(14);
+        doc.text('معلومات الطلب:', 20, 70);
+        
+        doc.setFontSize(12);
+        doc.text(`الرقم التركي: ${order.turkeyNumber}`, 30, 85);
+        doc.text(`الرقم السوري: ${order.syriaNumber}`, 30, 95);
+        doc.text(`الباقة: ${syAmount} ل.س`, 30, 105);
+        doc.text(`السعر: ${tlAmount} TL`, 30, 115);
+        
+        if (order.notes) {
+            doc.text(`ملاحظات: ${order.notes}`, 30, 125);
+        }
+        
+        doc.setTextColor(102, 126, 234);
+        doc.text('شادي الرز', 105, 150, { align: 'center' });
+        doc.text('واتس اب: 905375090593', 105, 160, { align: 'center' });
+        doc.setTextColor(100, 100, 100);
+        doc.text('re_2PsZgsgd_MrtR13QM1hRL5cHUwekQUfCU', 105, 180, { align: 'center' });
+        doc.text('re_M5GhZC7u_CxJcNvCxeRAHd8fiRs4JCn4V', 105, 190, { align: 'center' });
+        
+        doc.save(`فاتورة_${order.turkeyNumber}.pdf`);
+        
+        // إرسال إشعار بتحميل PDF
+        sendEmailNotification('pdf_download', order);
+    }
+
+    // تصدير جميع الفواتير
+    window.exportAllPDF = function() {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        
+        if (orders.length === 0) {
+            alert('لا توجد طلبات للتصدير');
+            return;
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFont('cairo');
+        doc.setFontSize(22);
+        doc.setTextColor(102, 126, 234);
+        doc.text('تقرير جميع الطلبات', 105, 20, { align: 'center' });
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        
+        let y = 40;
+        orders.forEach((order, i) => {
+            const [syAmount, tlAmount] = order.package.split('-');
+            
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+            
+            doc.text(`الطلب #${i + 1}`, 20, y);
+            doc.text(`التاريخ: ${order.date}`, 20, y + 7);
+            doc.text(`الرقم التركي: ${order.turkeyNumber}`, 20, y + 14);
+            doc.text(`الرقم السوري: ${order.syriaNumber}`, 20, y + 21);
+            doc.text(`الباقة: ${syAmount} ل.س - ${tlAmount} TL`, 20, y + 28);
+            
+            y += 40;
+        });
+        
+        doc.save('جميع_الطلبات.pdf');
+        
+        // إرسال إشعار بتصدير جميع الفواتير
+        sendEmailNotification('export_all_pdf', orders.length);
+    }
+
+    // تصدير إلى Excel
+    window.exportToExcel = function() {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        
+        if (orders.length === 0) {
+            alert('لا توجد طلبات للتصدير');
+            return;
+        }
+
+        const data = orders.map((order, index) => {
+            const [syAmount, tlAmount] = order.package.split('-');
+            return {
+                'م': index + 1,
+                'التاريخ': order.date,
+                'الرقم التركي': order.turkeyNumber,
+                'الرقم السوري': order.syriaNumber,
+                'الباقة': syAmount + ' ل.س',
+                'السعر': tlAmount + ' TL',
+                'ملاحظات': order.notes || ''
+            };
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, 'الطلبات');
+        XLSX.writeFile(wb, 'الطلبات.xlsx');
+        
+        // إرسال إشعار بتصدير Excel
+        sendEmailNotification('export_excel', orders.length);
+    }
+
+    // إرسال واتس اب
+    window.sendWhatsApp = function(phone) {
+        window.open(`https://wa.me/${phone}`, '_blank');
+    }
+
+    // إرسال إيميل للطلب
+    window.sendOrderEmail = function(orderIndex) {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        const order = orders[orderIndex];
+        
+        const [syAmount, tlAmount] = order.package.split('-');
+        const subject = encodeURIComponent(`فاتورة طلب شحن رقم ${order.id}`);
         const body = encodeURIComponent(
-            `تم استلام طلب شحن جديد:\n\n` +
+            `معلومات الطلب:\n\n` +
             `📅 التاريخ: ${order.date}\n` +
-            `🇹🇷 الرقم التركي: ${order.turkeyNumber}\n` +
-            `🇸🇾 الرقم السوري: ${order.syriaNumber}\n` +
+            `📞 الرقم التركي: ${order.turkeyNumber}\n` +
+            `📞 الرقم السوري: ${order.syriaNumber}\n` +
             `💳 الباقة: ${syAmount} ل.س\n` +
             `💰 السعر: ${tlAmount} TL\n` +
             `📝 ملاحظات: ${order.notes || 'لا يوجد'}\n\n` +
-            `🔑 كود الطلب: re_2PsZgsgd_MrtR13QM1hRL5cHUwekQUfCU`
+            `🔑 كود 1: re_2PsZgsgd_MrtR13QM1hRL5cHUwekQUfCU\n` +
+            `🔑 كود 2: re_M5GhZC7u_CxJcNvCxeRAHd8fiRs4JCn4V`
         );
         
         window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`, '_blank');
+    }
+
+    // إرسال تقرير عبر Gmail
+    window.sendEmailReport = function() {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        
+        const totalOrders = orders.length;
+        const totalTL = orders.reduce((sum, order) => {
+            const tlAmount = parseInt(order.package.split('-')[1]);
+            return sum + (isNaN(tlAmount) ? 0 : tlAmount);
+        }, 0);
+        
+        const today = new Date().toLocaleDateString('ar-SA');
+        const todayOrders = orders.filter(order => order.date.includes(today)).length;
+        
+        let ordersList = '';
+        orders.slice(0, 10).forEach((order, i) => {
+            const [syAmount, tlAmount] = order.package.split('-');
+            ordersList += `${i + 1}. ${order.date} - ${order.turkeyNumber} - ${syAmount} ل.س - ${tlAmount} TL\n`;
+        });
+
+        const subject = encodeURIComponent(`تقرير الطلبات - ${today}`);
+        const body = encodeURIComponent(
+            `تقرير الطلبات الشامل:\n\n` +
+            `📊 إحصائيات:\n` +
+            `• إجمالي الطلبات: ${totalOrders}\n` +
+            `• إجمالي المبيعات: ${totalTL} TL\n` +
+            `• طلبات اليوم: ${todayOrders}\n\n` +
+            `📋 آخر 10 طلبات:\n${ordersList}\n\n` +
+            `🔑 كود التقرير: re_M5GhZC7u_CxJcNvCxeRAHd8fiRs4JCn4V`
+        );
+        
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`, '_blank');
+    }
+
+    // إرسال إشعار Gmail
+    function sendEmailNotification(type, data) {
+        let subject = '';
+        let body = '';
+        
+        const now = new Date().toLocaleString('ar-SA');
+        
+        switch(type) {
+            case 'delete':
+                subject = 'تم حذف طلب';
+                body = `تم حذف الطلب رقم ${data} في ${now}`;
+                break;
+            case 'clear_all':
+                subject = 'تم حذف جميع الطلبات';
+                body = `تم حذف جميع الطلبات في ${now}`;
+                break;
+            case 'pdf_download':
+                subject = 'تم تحميل فاتورة';
+                body = `تم تحميل فاتورة للطلب:\nالرقم التركي: ${data.turkeyNumber}\nالسعر: ${data.package.split('-')[1]} TL`;
+                break;
+            case 'export_all_pdf':
+                subject = 'تم تصدير جميع الفواتير';
+                body = `تم تصدير ${data} فاتورة في ${now}`;
+                break;
+            case 'export_excel':
+                subject = 'تم تصدير ملف Excel';
+                body = `تم تصدير ${data} طلب إلى Excel في ${now}`;
+                break;
+            default:
+                return;
+        }
+        
+        body += `\n\n🔑 كود الإشعار: re_M5GhZC7u_CxJcNvCxeRAHd8fiRs4JCn4V`;
+        
+        const emailSubject = encodeURIComponent(subject);
+        const emailBody = encodeURIComponent(body);
+        
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${emailSubject}&body=${emailBody}`, '_blank');
     }
 </script>
 
